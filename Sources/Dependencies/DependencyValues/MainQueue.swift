@@ -1,4 +1,5 @@
-#if canImport(Combine)
+#if CombineSchedulers
+#if canImport(Combine) || canImport(OpenCombineShim)
   import Foundation
 
   extension DependencyValues {
@@ -61,4 +62,5 @@
         .unimplemented(#"@Dependency(\.mainQueue)"#)
     }
   }
+#endif
 #endif

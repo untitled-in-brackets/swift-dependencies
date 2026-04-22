@@ -1,4 +1,5 @@
-#if canImport(Combine)
+#if CombineSchedulers
+#if canImport(Combine) || canImport(OpenCombineShim)
   import Foundation
 
   extension DependencyValues {
@@ -60,4 +61,5 @@
       static let testValue = AnySchedulerOf<RunLoop>.unimplemented(#"@Dependency(\.mainRunLoop)"#)
     }
   }
+#endif
 #endif

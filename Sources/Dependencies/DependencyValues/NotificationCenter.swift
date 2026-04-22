@@ -1,4 +1,5 @@
-#if canImport(Foundation)
+#if Foundation
+#if canImport(Foundation) && !os(WASI)
   import Foundation
 
   extension DependencyValues {
@@ -28,4 +29,5 @@
       static var testValue: NotificationCenter { NotificationCenter() }
     }
   }
+#endif
 #endif
