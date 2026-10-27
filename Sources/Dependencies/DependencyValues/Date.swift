@@ -1,5 +1,9 @@
 #if Foundation
-  public import Foundation
+  #if canImport(FoundationEssentials)
+    public import struct FoundationEssentials.Date
+  #else
+    public import struct Foundation.Date
+  #endif
 
   extension DependencyValues {
     /// A dependency that returns the current date.

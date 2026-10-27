@@ -36,16 +36,27 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/pointfreeco/combine-schedulers", from: "1.0.2"),
-    .package(url: "https://github.com/pointfreeco/swift-clocks", from: "1.0.4"),
-    .package(url: "https://github.com/pointfreeco/swift-concurrency-extras", from: "1.0.0"),
-    .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", from: "1.13.0"),
+    .package(
+      url: "https://github.com/untitled-in-brackets/swift-clocks",
+      revision: "24be7e8cb8bb8ba436cefcf9066d14158cd3a66c"
+    ),
+    .package(
+      url: "https://github.com/untitled-in-brackets/swift-concurrency-extras",
+      revision: "c73eb801949f38c2026cca8014b76914e6a47092",
+      traits: [.trait(name: "Foundation", condition: .when(traits: ["Foundation"]))]
+    ),
+    .package(
+      url: "https://github.com/untitled-in-brackets/swift-issue-reporting",
+      revision: "445602fe40f8f3cdbd78bcbe2bd939426711b756",
+      traits: [.trait(name: "Foundation", condition: .when(traits: ["Foundation"]))]
+    ),
     .package(url: "https://github.com/swiftlang/swift-syntax", "509.0.0"..<"605.0.0"),
   ],
   targets: [
     .target(
       name: "DependenciesTestObserver",
       dependencies: [
-        .product(name: "IssueReporting", package: "xctest-dynamic-overlay")
+        .product(name: "IssueReporting", package: "swift-issue-reporting")
       ]
     ),
     .target(
@@ -62,7 +73,7 @@ let package = Package(
           condition: .when(traits: ["CombineSchedulers"])
         ),
         .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
-        .product(name: "IssueReporting", package: "xctest-dynamic-overlay"),
+        .product(name: "IssueReporting", package: "swift-issue-reporting"),
       ],
       swiftSettings: [
         .enableUpcomingFeature("MemberImportVisibility")
@@ -73,7 +84,7 @@ let package = Package(
       dependencies: [
         "Dependencies",
         .product(name: "ConcurrencyExtras", package: "swift-concurrency-extras"),
-        .product(name: "IssueReportingTestSupport", package: "xctest-dynamic-overlay"),
+        .product(name: "IssueReportingTestSupport", package: "swift-issue-reporting"),
       ]
     ),
     .testTarget(
@@ -81,7 +92,7 @@ let package = Package(
       dependencies: [
         "Dependencies",
         "DependenciesTestSupport",
-        .product(name: "IssueReportingTestSupport", package: "xctest-dynamic-overlay"),
+        .product(name: "IssueReportingTestSupport", package: "swift-issue-reporting"),
       ],
       exclude: ["Dependencies.xctestplan"]
     ),
@@ -89,7 +100,7 @@ let package = Package(
       name: "DependenciesMacros",
       dependencies: [
         "DependenciesMacrosPlugin",
-        .product(name: "IssueReporting", package: "xctest-dynamic-overlay"),
+        .product(name: "IssueReporting", package: "swift-issue-reporting"),
       ]
     ),
     .macro(

@@ -3,7 +3,11 @@
 
   #if canImport(Combine) || canImport(OpenCombineShim)
     public import Dispatch
-    import Foundation
+    #if canImport(FoundationEssentials)
+      import FoundationEssentials
+    #else
+      import Foundation
+    #endif
 
     #if canImport(Combine)
       import Combine

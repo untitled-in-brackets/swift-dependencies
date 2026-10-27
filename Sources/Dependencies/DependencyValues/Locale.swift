@@ -1,5 +1,5 @@
 #if Foundation
-  public import Foundation
+  public import struct Foundation.Locale
 
   extension DependencyValues {
     /// The current locale that features should use.

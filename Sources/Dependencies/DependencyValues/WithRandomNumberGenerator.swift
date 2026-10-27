@@ -1,5 +1,4 @@
 import ConcurrencyExtras
-import Foundation
 
 extension DependencyValues {
   /// A dependency that yields a random number generator to a closure.

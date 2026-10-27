@@ -36,9 +36,20 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/pointfreeco/combine-schedulers", from: "1.0.2"),
-    .package(url: "https://github.com/pointfreeco/swift-clocks", from: "1.0.4"),
-    .package(url: "https://github.com/pointfreeco/swift-concurrency-extras", from: "1.0.0"),
-    .package(url: "https://github.com/pointfreeco/swift-issue-reporting", from: "2.1.0"),
+    .package(
+      url: "https://github.com/untitled-in-brackets/swift-clocks",
+      revision: "24be7e8cb8bb8ba436cefcf9066d14158cd3a66c"
+    ),
+    .package(
+      url: "https://github.com/untitled-in-brackets/swift-concurrency-extras",
+      revision: "c73eb801949f38c2026cca8014b76914e6a47092",
+      traits: [.trait(name: "Foundation", condition: .when(traits: ["Foundation"]))]
+    ),
+    .package(
+      url: "https://github.com/untitled-in-brackets/swift-issue-reporting",
+      revision: "445602fe40f8f3cdbd78bcbe2bd939426711b756",
+      traits: [.trait(name: "Foundation", condition: .when(traits: ["Foundation"]))]
+    ),
     .package(url: "https://github.com/swiftlang/swift-syntax", "509.0.0"..<"605.0.0"),
   ],
   targets: [

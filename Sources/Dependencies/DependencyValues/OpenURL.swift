@@ -1,5 +1,9 @@
 #if canImport(SwiftUI)
-  public import Foundation
+  #if canImport(FoundationEssentials)
+    public import struct FoundationEssentials.URL
+  #else
+    public import struct Foundation.URL
+  #endif
   import IssueReporting
   import SwiftUI
 

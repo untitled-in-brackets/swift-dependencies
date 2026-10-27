@@ -1,6 +1,6 @@
 #if Foundation
   #if canImport(Foundation) && !os(WASI)
-    public import Foundation
+    public import class Foundation.NotificationCenter
 
     extension DependencyValues {
       /// The notification center that features should use.

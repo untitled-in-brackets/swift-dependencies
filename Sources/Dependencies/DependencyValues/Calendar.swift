@@ -1,5 +1,9 @@
 #if Foundation
-  public import Foundation
+  #if canImport(FoundationEssentials)
+    public import struct FoundationEssentials.Calendar
+  #else
+    public import struct Foundation.Calendar
+  #endif
 
   extension DependencyValues {
     /// The current calendar that features should use when handling dates.

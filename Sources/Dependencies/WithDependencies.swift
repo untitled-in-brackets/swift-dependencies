@@ -1,6 +1,11 @@
 import ConcurrencyExtras
-import Foundation
 import IssueReporting
+
+#if canImport(FoundationEssentials)
+  import FoundationEssentials
+#else
+  import Foundation
+#endif
 
 /// Prepares global dependencies for the lifetime of your application.
 ///

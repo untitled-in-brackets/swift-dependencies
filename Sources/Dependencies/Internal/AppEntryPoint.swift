@@ -1,6 +1,6 @@
-import Foundation
+#if canImport(SwiftUI) && Foundation
+  import Foundation
 
-#if canImport(SwiftUI)
   extension Thread {
     static var isPreviewAppEntryPoint: Bool {
       guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"

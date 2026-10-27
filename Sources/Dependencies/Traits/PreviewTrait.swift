@@ -1,5 +1,9 @@
 #if canImport(SwiftUI) && compiler(>=6)
-  import Foundation
+  #if canImport(FoundationEssentials)
+    import FoundationEssentials
+  #else
+    import Foundation
+  #endif
   public import SwiftUI
 
   @available(iOS 18, macOS 15, tvOS 18, watchOS 11, visionOS 2, *)

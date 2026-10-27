@@ -1,5 +1,16 @@
-public import Foundation
 import IssueReporting
+
+#if canImport(FoundationEssentials)
+  import FoundationEssentials
+  #if Foundation && canImport(Foundation)
+    public import class Foundation.NSRecursiveLock
+  #endif
+#else
+  public import Foundation
+#endif
+#if !Foundation || !canImport(Foundation)
+  @_spi(Internals) import ConcurrencyExtras
+#endif
 
 #if os(Windows)
   import WinSDK
@@ -11,7 +22,7 @@ import IssueReporting
   import Musl
 #endif
 // WASI does not support dynamic linking
-#if os(WASI)
+#if os(WASI) && Foundation
   import XCTest
 #endif
 
@@ -27,7 +38,7 @@ import IssueReporting
   }
 
   final class TestObserver: NSObject {}
-#elseif os(WASI)
+#elseif os(WASI) && Foundation
   final class TestObserver: NSObject, XCTestObservation {
     private let resetCache: @convention(c) () -> Void
     internal init(_ resetCache: @convention(c) () -> Void) {
@@ -124,7 +135,7 @@ public struct DependencyValues: Sendable {
     @TaskLocal static var currentDependency = CurrentDependency()
     @TaskLocal static var isSetting = false
   #endif
-  @TaskLocal static var preparationID: Foundation.UUID?
+  @TaskLocal static var preparationID: UUID?
   static var isPreparing: Bool {
     preparationID != nil
   }
@@ -165,7 +176,7 @@ public struct DependencyValues: Sendable {
           XCTestObservationCenterShared
           .perform(Selector(("addTestObserver:")), with: TestObserver())
       }
-    #elseif os(WASI)
+    #elseif os(WASI) && Foundation
       if isTesting {
         XCTestObservationCenter.shared.addTestObserver(
           TestObserver {
@@ -173,7 +184,7 @@ public struct DependencyValues: Sendable {
           }
         )
       }
-    #else
+    #elseif !os(WASI)
       typealias RegisterTestObserver = @convention(thin) (@convention(c) () -> Void) -> Void
       var pRegisterTestObserver: RegisterTestObserver? = nil
 
@@ -299,75 +310,79 @@ public struct DependencyValues: Sendable {
         self.storage[ObjectIdentifier(key)] = newValue
         return
       }
-      cachedValues.lock.lock()
-      defer { cachedValues.lock.unlock() }
+      let cachedValues = self.cachedValues
+      let context = self.context
+      let preparationID = DependencyValues.preparationID
+      let currentDependency = DependencyValues.currentDependency
       let cacheKey = CachedValues.CacheKey(id: TypeIdentifier(key), context: context)
-      let existingValue = cachedValues.cached[cacheKey]
-      guard
-        existingValue == nil
-          || existingValue?.preparationID == DependencyValues.preparationID
-          || (context == .preview && existingValue?.preparationID == nil)
-      else {
-        if context != .preview {
-          #if DEBUG
-            reportIssue(
-              {
-                var dependencyDescription = ""
-                if let fileID = DependencyValues.currentDependency.fileID,
-                  let line = DependencyValues.currentDependency.line
+      cachedValues.withLock {
+        let existingValue = cachedValues.cached[cacheKey]
+        guard
+          existingValue == nil
+            || existingValue?.preparationID == preparationID
+            || (context == .preview && existingValue?.preparationID == nil)
+        else {
+          if context != .preview {
+            #if DEBUG
+              reportIssue(
                 {
+                  var dependencyDescription = ""
+                  if let fileID = currentDependency.fileID,
+                    let line = currentDependency.line
+                  {
+                    dependencyDescription.append(
+                      """
+                        Location:
+                          \(fileID):\(line)
+
+                      """
+                    )
+                  }
                   dependencyDescription.append(
-                    """
-                      Location:
-                        \(fileID):\(line)
-
-                    """
+                    Key.self == Key.Value.self
+                      ? """
+                        Dependency:
+                          \(typeName(Key.Value.self))
+                      """
+                      : """
+                        Key:
+                          \(typeName(Key.self))
+                        Value:
+                          \(typeName(Key.Value.self))
+                      """
                   )
-                }
-                dependencyDescription.append(
-                  Key.self == Key.Value.self
-                    ? """
-                      Dependency:
-                        \(typeName(Key.Value.self))
+                  var argument: String {
+                    "\(function)" == "subscript(key:)"
+                      ? "\(typeName(Key.self)).self"
+                      : "\\.\(function)"
+                  }
+                  return """
+                    @Dependency(\(argument)) has already been accessed or prepared.
+
+                    \(dependencyDescription)
+
+                    A global dependency can only be prepared a single time and cannot be \
+                    accessed beforehand. Prepare dependencies as early as possible in the \
+                    lifecycle of your application.
+
+                    To temporarily override a dependency in your application, use \
+                    'withDependencies' to do so in a well-defined scope.
                     """
-                    : """
-                      Key:
-                        \(typeName(Key.self))
-                      Value:
-                        \(typeName(Key.Value.self))
-                    """
-                )
-                var argument: String {
-                  "\(function)" == "subscript(key:)"
-                    ? "\(typeName(Key.self)).self"
-                    : "\\.\(function)"
-                }
-                return """
-                  @Dependency(\(argument)) has already been accessed or prepared.
-
-                  \(dependencyDescription)
-
-                  A global dependency can only be prepared a single time and cannot be \
-                  accessed beforehand. Prepare dependencies as early as possible in the \
-                  lifecycle of your application.
-
-                  To temporarily override a dependency in your application, use \
-                  'withDependencies' to do so in a well-defined scope.
-                  """
-              }(),
-              fileID: DependencyValues.currentDependency.fileID ?? fileID,
-              filePath: DependencyValues.currentDependency.filePath ?? filePath,
-              line: DependencyValues.currentDependency.line ?? line,
-              column: DependencyValues.currentDependency.column ?? column
-            )
-          #endif
+                }(),
+                fileID: currentDependency.fileID ?? fileID,
+                filePath: currentDependency.filePath ?? filePath,
+                line: currentDependency.line ?? line,
+                column: currentDependency.column ?? column
+              )
+            #endif
+          }
+          return
         }
-        return
+        cachedValues.cached[cacheKey] = CachedValues.CachedValue(
+          base: newValue,
+          preparationID: preparationID
+        )
       }
-      cachedValues.cached[cacheKey] = CachedValues.CachedValue(
-        base: newValue,
-        preparationID: DependencyValues.preparationID
-      )
     }
   }
 
@@ -491,16 +506,32 @@ public final class CachedValues: @unchecked Sendable {
 
   public struct CachedValue {
     let base: any Sendable
-    let preparationID: Foundation.UUID?
+    let preparationID: UUID?
   }
 
-  public let lock = NSRecursiveLock()
+  #if Foundation && canImport(Foundation)
+    public let lock = NSRecursiveLock()
+  #else
+    @_spi(Internals) public let lock = LockIsolated(())
+  #endif
   public var cached = [CacheKey: CachedValue]()
 
+  fileprivate func withLock<Result: Sendable>(
+    _ operation: @Sendable () throws -> Result
+  ) rethrows -> Result {
+    #if Foundation && canImport(Foundation)
+      lock.lock()
+      defer { lock.unlock() }
+      return try operation()
+    #else
+      return try lock.withValue { _ in try operation() }
+    #endif
+  }
+
   public func resetCache() {
-    lock.lock()
-    defer { lock.unlock() }
-    cached = [:]
+    withLock {
+      cached = [:]
+    }
   }
 
   func value<Key: TestDependencyKey>(
@@ -512,115 +543,115 @@ public final class CachedValues: @unchecked Sendable {
     line: UInt = #line,
     column: UInt = #column
   ) -> Key.Value {
-    lock.lock()
-    defer { lock.unlock() }
-
-    return withIssueContext(fileID: fileID, filePath: filePath, line: line, column: column) {
-      let cacheKey = CacheKey(id: TypeIdentifier(key), context: context)
-      #if DEBUG
-        if context == .live,
-          !DependencyValues.isSetting,
-          !(cached[cacheKey] != nil && cached[cacheKey]?.preparationID != nil),
-          !(key is any DependencyKey.Type)
-        {
-          reportIssue(
-            {
-              var dependencyDescription = ""
-              if let fileID = DependencyValues.currentDependency.fileID,
-                let line = DependencyValues.currentDependency.line
+    let cacheKey = CacheKey(id: TypeIdentifier(key), context: context)
+    let isDependencyKey = key is any DependencyKey.Type
+    return withLock {
+      withIssueContext(fileID: fileID, filePath: filePath, line: line, column: column) {
+        #if DEBUG
+          if context == .live,
+            !DependencyValues.isSetting,
+            !(cached[cacheKey] != nil && cached[cacheKey]?.preparationID != nil),
+            !isDependencyKey
+          {
+            reportIssue(
               {
+                var dependencyDescription = ""
+                if let fileID = DependencyValues.currentDependency.fileID,
+                  let line = DependencyValues.currentDependency.line
+                {
+                  dependencyDescription.append(
+                    """
+                      Location:
+                        \(fileID):\(line)
+
+                    """
+                  )
+                }
                 dependencyDescription.append(
-                  """
-                    Location:
-                      \(fileID):\(line)
-
-                  """
+                  Key.self == Key.Value.self
+                    ? """
+                      Dependency:
+                        \(typeName(Key.Value.self))
+                    """
+                    : """
+                      Key:
+                        \(typeName(Key.self))
+                      Value:
+                        \(typeName(Key.Value.self))
+                    """
                 )
-              }
-              dependencyDescription.append(
-                Key.self == Key.Value.self
-                  ? """
-                    Dependency:
-                      \(typeName(Key.Value.self))
+
+                var argument: String {
+                  "\(function)" == "subscript(key:)"
+                    ? "\(typeName(Key.self)).self"
+                    : "\\.\(function)"
+                }
+                return """
+                  @Dependency(\(argument)) has no live implementation, but was accessed from a live \
+                  context.
+
+                  \(dependencyDescription)
+
+                  To fix you can do one of two things:
+
+                  • Conform '\(typeName(Key.self))' to the 'DependencyKey' protocol by providing \
+                  a live implementation of your dependency, and make sure that the conformance is \
+                  linked with this current application.
+
+                  • Override the implementation of '\(typeName(Key.self))' using \
+                  'withDependencies'. This is typically done at the entry point of your \
+                  application, but can be done later too.
                   """
-                  : """
-                    Key:
-                      \(typeName(Key.self))
-                    Value:
-                      \(typeName(Key.Value.self))
-                  """
-              )
-
-              var argument: String {
-                "\(function)" == "subscript(key:)"
-                  ? "\(typeName(Key.self)).self"
-                  : "\\.\(function)"
-              }
-              return """
-                @Dependency(\(argument)) has no live implementation, but was accessed from a live \
-                context.
-
-                \(dependencyDescription)
-
-                To fix you can do one of two things:
-
-                • Conform '\(typeName(Key.self))' to the 'DependencyKey' protocol by providing \
-                a live implementation of your dependency, and make sure that the conformance is \
-                linked with this current application.
-
-                • Override the implementation of '\(typeName(Key.self))' using \
-                'withDependencies'. This is typically done at the entry point of your \
-                application, but can be done later too.
-                """
-            }(),
-            fileID: DependencyValues.currentDependency.fileID ?? fileID,
-            filePath: DependencyValues.currentDependency.filePath ?? filePath,
-            line: DependencyValues.currentDependency.line ?? line,
-            column: DependencyValues.currentDependency.column ?? column
-          )
-        }
-      #endif
-
-      guard let base = cached[cacheKey]?.base, let value = base as? Key.Value
-      else {
-        let value: Key.Value?
-        switch context {
-        case .live:
-          value = (key as? any DependencyKey.Type)?.liveValue as? Key.Value
-        case .preview:
-          if !CachedValues.isAccessingCachedDependencies {
-            value = CachedValues.$isAccessingCachedDependencies.withValue(true) {
-              return Key.previewValue
-            }
-          } else {
-            value = Key.previewValue
+              }(),
+              fileID: DependencyValues.currentDependency.fileID ?? fileID,
+              filePath: DependencyValues.currentDependency.filePath ?? filePath,
+              line: DependencyValues.currentDependency.line ?? line,
+              column: DependencyValues.currentDependency.column ?? column
+            )
           }
-        case .test:
-          #if compiler(<6.1)
-            if !CachedValues.isAccessingCachedDependencies,
-              case .swiftTesting(.some(let testing)) = TestContext.current,
-              let testValues = testValuesByTestID.withValue({ $0[testing.test.id.rawValue] })
-            {
+        #endif
+
+        guard let base = cached[cacheKey]?.base, let value = base as? Key.Value
+        else {
+          let value: Key.Value?
+          switch context {
+          case .live:
+            value = (key as? any DependencyKey.Type)?.liveValue as? Key.Value
+          case .preview:
+            if !CachedValues.isAccessingCachedDependencies {
               value = CachedValues.$isAccessingCachedDependencies.withValue(true) {
-                testValues[key]
+                return Key.previewValue
               }
             } else {
-              value = Key.testValue
+              value = Key.previewValue
             }
-          #else
-            value = Key.testValue
-          #endif
+          case .test:
+            #if compiler(<6.1)
+              if !CachedValues.isAccessingCachedDependencies,
+                case .swiftTesting(.some(let testing)) = TestContext.current,
+                let testValues = testValuesByTestID.withValue({ $0[testing.test.id.rawValue] })
+              {
+                value = CachedValues.$isAccessingCachedDependencies.withValue(true) {
+                  testValues[key]
+                }
+              } else {
+                value = Key.testValue
+              }
+            #else
+              value = Key.testValue
+            #endif
+          }
+
+          let cacheableValue = value ?? Key.testValue
+          cached[cacheKey] = CachedValue(
+            base: cacheableValue,
+            preparationID: DependencyValues.preparationID
+          )
+          return cacheableValue
         }
 
-        let cacheableValue = value ?? Key.testValue
-        cached[cacheKey] = CachedValue(
-          base: cacheableValue,
-          preparationID: DependencyValues.preparationID
-        )
-        return cacheableValue
+        return value
       }
-
-      return value
     }
   }
 }

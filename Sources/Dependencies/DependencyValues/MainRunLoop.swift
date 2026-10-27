@@ -1,4 +1,4 @@
-#if CombineSchedulers
+#if CombineSchedulers && Foundation
   public import CombineSchedulers
 
   #if canImport(Combine) || canImport(OpenCombineShim)

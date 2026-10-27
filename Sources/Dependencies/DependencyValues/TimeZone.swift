@@ -1,5 +1,5 @@
 #if Foundation
-  public import Foundation
+  public import struct Foundation.TimeZone
 
   extension DependencyValues {
     /// The current time zone that features should use when handling dates.

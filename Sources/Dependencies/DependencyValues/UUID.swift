@@ -1,6 +1,10 @@
 #if Foundation
   import ConcurrencyExtras
-  public import Foundation
+  #if canImport(FoundationEssentials)
+    public import struct FoundationEssentials.UUID
+  #else
+    public import struct Foundation.UUID
+  #endif
 
   extension DependencyValues {
     /// A dependency that generates UUIDs.
@@ -132,10 +136,14 @@
     /// ```
     public init(_ intValue: Int) {
       let isNegative = intValue < 0
-      let intValue = isNegative ? -intValue : intValue
-      var hexString = String(format: "%016llx", intValue)
-      hexString.insert("-", at: hexString.index(hexString.startIndex, offsetBy: 4))
-      self.init(uuidString: "00000000-0000-000\(isNegative ? "1" : "0")-\(hexString)")!
+      let hexString = String(intValue.magnitude, radix: 16)
+      let paddedHexString =
+        String(repeating: "0", count: 16 - hexString.count) + hexString
+      let formattedHexString =
+        paddedHexString.prefix(4) + "-" + paddedHexString.dropFirst(4)
+      self.init(
+        uuidString: "00000000-0000-000\(isNegative ? "1" : "0")-\(formattedHexString)"
+      )!
     }
   }
 

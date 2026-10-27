@@ -1,4 +1,11 @@
-import Foundation
+#if canImport(FoundationEssentials)
+  import FoundationEssentials
+  #if Foundation
+    import Foundation
+  #endif
+#else
+  import Foundation
+#endif
 
 @usableFromInline
 func typeName(_ type: Any.Type) -> String {
@@ -6,12 +13,13 @@ func typeName(_ type: Any.Type) -> String {
   if let index = name.firstIndex(of: ".") {
     name.removeSubrange(...index)
   }
-  let sanitizedName =
-    name
-    .replacingOccurrences(
+  #if Foundation
+    return name.replacingOccurrences(
       of: #"\(unknown context at \$[[:xdigit:]]+\)\."#,
       with: "",
       options: .regularExpression
     )
-  return sanitizedName
+  #else
+    return name.replacing(#/\(unknown context at \$[0-9a-fA-F]+\)\./#, with: "")
+  #endif
 }
