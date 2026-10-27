@@ -1,5 +1,9 @@
-#if Foundation
-  public import struct Foundation.TimeZone
+#if Foundation || canImport(FoundationEssentials)
+  #if canImport(FoundationEssentials)
+    public import struct FoundationEssentials.TimeZone
+  #else
+    public import struct Foundation.TimeZone
+  #endif
 
   extension DependencyValues {
     /// The current time zone that features should use when handling dates.

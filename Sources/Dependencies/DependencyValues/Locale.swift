@@ -1,5 +1,9 @@
-#if Foundation
-  public import struct Foundation.Locale
+#if Foundation || canImport(FoundationEssentials)
+  #if canImport(FoundationEssentials)
+    public import struct FoundationEssentials.Locale
+  #else
+    public import struct Foundation.Locale
+  #endif
 
   extension DependencyValues {
     /// The current locale that features should use.
