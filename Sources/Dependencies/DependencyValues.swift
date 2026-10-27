@@ -313,7 +313,9 @@ public struct DependencyValues: Sendable {
       let cachedValues = self.cachedValues
       let context = self.context
       let preparationID = DependencyValues.preparationID
-      let currentDependency = DependencyValues.currentDependency
+      #if DEBUG
+        let currentDependency = DependencyValues.currentDependency
+      #endif
       let cacheKey = CachedValues.CacheKey(id: TypeIdentifier(key), context: context)
       cachedValues.withLock {
         let existingValue = cachedValues.cached[cacheKey]
