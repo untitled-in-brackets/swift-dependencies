@@ -1,5 +1,5 @@
 {
-  "originHash" : "41b1b9a9719a1cb388cc874065647592d8cd7af7d642d2f88473471d88847014",
+  "originHash" : "c2f648d49761863719b72becf4329f9cba7ef8eed2d67ef6d091530f8c773d34",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -24,7 +24,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/untitled-in-brackets/swift-clocks",
       "state" : {
-        "revision" : "24be7e8cb8bb8ba436cefcf9066d14158cd3a66c"
+        "revision" : "db0de61874baa7780578e6d81498f45a05097abe"
       }
     },
     {
@@ -67,7 +67,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/untitled-in-brackets/swift-issue-reporting",
       "state" : {
-        "revision" : "445602fe40f8f3cdbd78bcbe2bd939426711b756"
+        "revision" : "ddf7cf956f33feea8ec6bc7af5e33c86eb060c66"
       }
     },
     {
