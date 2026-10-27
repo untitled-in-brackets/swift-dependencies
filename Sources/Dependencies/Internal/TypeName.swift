@@ -20,6 +20,29 @@ func typeName(_ type: Any.Type) -> String {
       options: .regularExpression
     )
   #else
-    return name.replacing(#/\(unknown context at \$[0-9a-fA-F]+\)\./#, with: "")
+    let marker = "(unknown context at $"
+    var sanitizedName = ""
+    var index = name.startIndex
+    while index < name.endIndex {
+      if name[index...].starts(with: marker) {
+        let hexStart = name.index(index, offsetBy: marker.count)
+        var end = hexStart
+        while end < name.endIndex, "0123456789abcdefABCDEF".contains(name[end]) {
+          end = name.index(after: end)
+        }
+        if end > hexStart,
+          end < name.endIndex,
+          name[end] == ")",
+          name.index(after: end) < name.endIndex,
+          name[name.index(after: end)] == "."
+        {
+          index = name.index(after: name.index(after: end))
+          continue
+        }
+      }
+      sanitizedName.append(name[index])
+      index = name.index(after: index)
+    }
+    return sanitizedName
   #endif
 }
