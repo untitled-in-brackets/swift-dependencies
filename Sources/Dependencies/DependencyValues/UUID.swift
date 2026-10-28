@@ -1,4 +1,4 @@
-#if Foundation || canImport(FoundationEssentials)
+#if Foundation || canImport(FoundationEssentials) || canImport(Darwin)
   import ConcurrencyExtras
   #if canImport(FoundationEssentials)
     public import struct FoundationEssentials.UUID

@@ -1,4 +1,4 @@
-#if Foundation || canImport(FoundationEssentials)
+#if Foundation || canImport(FoundationEssentials) || canImport(Darwin)
   #if canImport(FoundationEssentials)
     public import struct FoundationEssentials.Date
   #else
