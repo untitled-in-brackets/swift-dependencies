@@ -38,7 +38,8 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/combine-schedulers", from: "1.0.2"),
     .package(
       url: "https://github.com/untitled-in-brackets/swift-clocks",
-      revision: "db0de61874baa7780578e6d81498f45a05097abe"
+      revision: "7907ccc99cbd860647b67a6aa3f41c181b7334d9",
+      traits: [.trait(name: "Foundation", condition: .when(traits: ["Foundation"]))]
     ),
     .package(
       url: "https://github.com/untitled-in-brackets/swift-concurrency-extras",
