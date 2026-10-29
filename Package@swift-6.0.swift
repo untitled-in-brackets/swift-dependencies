@@ -29,7 +29,7 @@ let package = Package(
     .package(url: "https://github.com/pointfreeco/combine-schedulers", from: "1.0.2"),
     .package(
       url: "https://github.com/untitled-in-brackets/swift-clocks",
-      revision: "7907ccc99cbd860647b67a6aa3f41c181b7334d9"
+      revision: "6fdc16cb354091e62ab35ecc6aa72bdba5eda187"
     ),
     .package(
       url: "https://github.com/untitled-in-brackets/swift-concurrency-extras",
